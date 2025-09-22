@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from textwrap import wrap
 
 # ===== Utility: Generate barcode image =====
 def generate_barcode(sku: str, desc: str = "", harga: str = "") -> Image.Image:
@@ -20,7 +21,8 @@ def generate_barcode(sku: str, desc: str = "", harga: str = "") -> Image.Image:
     barcode_img = Image.open(buffer)
 
     width, height = barcode_img.size
-    extra_height = 120 if (desc or harga) else 80
+    # Tambah tinggi ekstra, lebih fleksibel kalau ada wrap
+    extra_height = 160
     new_img = Image.new("RGB", (width, height + extra_height), "white")
     new_img.paste(barcode_img, (0, 0))
 
@@ -38,21 +40,24 @@ def generate_barcode(sku: str, desc: str = "", harga: str = "") -> Image.Image:
     draw.text(((width - text_width1) // 2, y_offset), line1, font=font, fill="black")
     y_offset += 25
 
-    # Baris kedua: Description (opsional)
+    # Baris kedua: Description (opsional, dengan wrap)
     if desc:
-        line2 = f"{desc}"
-        text_width2 = draw.textlength(line2, font=font)
-        draw.text(((width - text_width2) // 2, y_offset), line2, font=font, fill="black")
-        y_offset += 25
+        # Batas karakter kira-kira (bisa diatur sesuai lebar barcode)
+        max_chars = max(1, width // 12)  # perkiraan 12px per karakter
+        wrapped_desc = wrap(desc, width=max_chars)
+
+        for line in wrapped_desc:
+            text_width2 = draw.textlength(line, font=font)
+            draw.text(((width - text_width2) // 2, y_offset), line, font=font, fill="black")
+            y_offset += 20
 
     # Baris ketiga: Harga (opsional)
     if harga:
         line3 = f"Harga: {harga}"
         text_width3 = draw.textlength(line3, font=font)
-        draw.text(((width - text_width3) // 2, y_offset), line3, font=font, fill="black")
+        draw.text(((width - text_width3) // 2, y_offset + 5), line3, font=font, fill="black")
 
     return new_img
-
 # ===== Utility: Export ke PDF =====
 def export_pdf(df, num_cols=3, filename="barcodes.pdf"):
     buffer = BytesIO()
