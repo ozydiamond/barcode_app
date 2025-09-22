@@ -20,7 +20,7 @@ def generate_barcode(sku: str, desc: str = "", harga: str = "") -> Image.Image:
     barcode_img = Image.open(buffer)
 
     width, height = barcode_img.size
-    extra_height = 80 if desc or harga else 40
+    extra_height = 120 if (desc or harga) else 80
     new_img = Image.new("RGB", (width, height + extra_height), "white")
     new_img.paste(barcode_img, (0, 0))
 
@@ -30,16 +30,26 @@ def generate_barcode(sku: str, desc: str = "", harga: str = "") -> Image.Image:
     except:
         font = ImageFont.load_default()
 
-    # Baris pertama: SKU (selalu ada)
-    line1 = f"{sku}" if not desc else f"{sku} - {desc}"
-    text_width1 = draw.textlength(line1, font=font)
-    draw.text(((width - text_width1) // 2, height + 5), line1, font=font, fill="black")
+    y_offset = height + 5
 
-    # Baris kedua: Harga (opsional)
-    if harga:
-        line2 = f"Harga: {harga}"
+    # Baris pertama: SKU
+    line1 = f"{sku}"
+    text_width1 = draw.textlength(line1, font=font)
+    draw.text(((width - text_width1) // 2, y_offset), line1, font=font, fill="black")
+    y_offset += 25
+
+    # Baris kedua: Description (opsional)
+    if desc:
+        line2 = f"{desc}"
         text_width2 = draw.textlength(line2, font=font)
-        draw.text(((width - text_width2) // 2, height + 30), line2, font=font, fill="black")
+        draw.text(((width - text_width2) // 2, y_offset), line2, font=font, fill="black")
+        y_offset += 25
+
+    # Baris ketiga: Harga (opsional)
+    if harga:
+        line3 = f"Harga: {harga}"
+        text_width3 = draw.textlength(line3, font=font)
+        draw.text(((width - text_width3) // 2, y_offset), line3, font=font, fill="black")
 
     return new_img
 
